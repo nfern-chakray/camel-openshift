@@ -20,8 +20,8 @@ spec:
         from:
           uri: direct:start
           steps:
-            - marshal:
-                json: {}
+#            - marshal:
+#                json: {}
             - log:
                 message: Message received ${body}
                 loggingLevel: INFO
