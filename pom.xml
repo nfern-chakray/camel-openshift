@@ -11,7 +11,7 @@
     </parent>
 
     <groupId>com.chakray.spring-boot</groupId>
-    <artifactId>dummy-integration-app</artifactId>
+    <artifactId>publish-inventory-app</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
@@ -58,11 +58,51 @@
         </dependency>
         <dependency>
             <groupId>org.apache.camel.springboot</groupId>
+            <artifactId>camel-direct-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel.springboot</groupId>
+            <artifactId>camel-http-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel.springboot</groupId>
+            <artifactId>camel-jackson-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel.springboot</groupId>
+            <artifactId>camel-jaxb-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel.springboot</groupId>
+            <artifactId>camel-jetty-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel.springboot</groupId>
+            <artifactId>camel-jslt-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel.springboot</groupId>
+            <artifactId>camel-json-validator-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel.springboot</groupId>
+            <artifactId>camel-jsonpath-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel.springboot</groupId>
             <artifactId>camel-rest-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.camel.springboot</groupId>
-            <artifactId>camel-timer-starter</artifactId>
+            <artifactId>camel-saxon-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel.springboot</groupId>
+            <artifactId>camel-xj-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel.springboot</groupId>
+            <artifactId>camel-xpath-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.camel.springboot</groupId>

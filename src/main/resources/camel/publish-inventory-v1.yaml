@@ -1,0 +1,270 @@
+apiVersion: camel.apache.org/v1
+kind: Integration
+metadata:
+  name: publish-inventory
+spec:
+  flows:
+    - restConfiguration:
+        component: jetty
+        host: localhost
+        port: '8081'
+        bindingMode: json_xml
+    - rest:
+        post:
+          - path: /publish-inventory
+            to: direct:start
+            consumes: application/json
+        path: /service
+        consumes: application/json
+    - route:
+        from:
+          uri: direct:start
+          steps:
+            - marshal:
+                json: {}
+            - log:
+                message: Message received ${body}
+                loggingLevel: INFO
+                description: Log the payload
+            - doTry:
+                steps:
+                  - to:
+                      uri: json-validator:classpath:publish-inventory-v1-pim-schema.json
+                      description: Validate with input JSON Schema
+                  - log:
+                      message: Message was valid
+                      loggingLevel: INFO
+                      description: Log Validation Pass
+                  - step:
+                      steps:
+                        - setProperty:
+                            name: sku
+                            expression:
+                              jsonpath:
+                                expression: $.sku
+                                resultType: String
+                            description: Set SKU Property
+                        - setProperty:
+                            name: timestamp
+                            expression:
+                              jsonpath:
+                                expression: $.timestamp
+                                resultType: String
+                            description: Set timestamp Property
+                        - setProperty:
+                            name: freeStock
+                            expression:
+                              jsonpath:
+                                expression: $.stock.free
+                                resultType: float
+                            description: Set freeStock Property
+                        - setProperty:
+                            name: allocatedStock
+                            expression:
+                              jsonpath:
+                                expression: $.stock.allocated
+                                resultType: float
+                            description: Set allocatedStock Property
+                        - setProperty:
+                            name: damagedStock
+                            expression:
+                              jsonpath:
+                                expression: $.stock.damaged
+                                resultType: float
+                            description: Set damagedStock Property
+                        - setProperty:
+                            name: uom
+                            expression:
+                              jsonpath:
+                                expression: $.uom
+                                resultType: String
+                            description: Set uom Property
+                      description: Read input message
+                  - log:
+                      message: 'Getting cost centre for SKU: ${exchangeProperty.sku}'
+                      loggingLevel: INFO
+                      description: Log API request
+                  - to:
+                      uri: >-
+                        https://run.mocky.io/v3/d17a20af-c49f-414d-b165-d6b840be9b0d
+                      parameters:
+                        httpMethod: GET
+                        bridgeEndpoint: true
+                        throwExceptionOnFailure: true
+                      description: Call endpoint for cost centre
+                  - log:
+                      message: Backend responded with ${header.CamelHttpResponseCode}
+                      loggingLevel: INFO
+                      description: Log backend response status
+                  - choice:
+                      when:
+                        - expression:
+                            simple:
+                              expression: ${header.CamelHttpResponseCode} != '200'
+                          steps:
+                            - log:
+                                message: >-
+                                  Backend status was
+                                  ${header.CamelHttpResponseCode}
+                                description: Log Backend Fail
+                                loggingLevel: ERROR
+                            - setHeader:
+                                name: Exchange.HTTP_RESPONSE_CODE
+                                expression:
+                                  constant:
+                                    expression: '500'
+                                description: Set status 500
+                            - transform:
+                                expression:
+                                  constant: {}
+                                description: Set empty response body
+                          description: Status Not OK
+                      otherwise:
+                        steps:
+                          - setProperty:
+                              name: CostCentre
+                              expression:
+                                xpath:
+                                  expression: string(/Data/CostCentre)
+                                  resultType: STRING
+                                  saxon: true
+                              description: Extract the CostCentre value
+                          - log:
+                              message: 'Cost centre is: ${exchangeProperty.CostCentre}'
+                              loggingLevel: INFO
+                              description: Log backend reponse CostCentre
+                          - step:
+                              steps:
+                                - to:
+                                    uri: xj:identity
+                                    parameters:
+                                      transformDirection: XML2JSON
+                                    description: XML to JSON
+                                - log:
+                                    message: XJ BODY ${body}
+                                    description: Log Body
+                                    loggingLevel: INFO
+                                - to:
+                                    uri: jslt:classpath:backend.jslt
+                                    parameters:
+                                      allowContextMapAll: true
+                                    description: Map data to new payload
+                                - log:
+                                    message: Backend request body ${body}
+                                    description: Log body
+                                    loggingLevel: INFO
+                              description: Transform the target payload
+                          - doTry:
+                              steps:
+                                - to:
+                                    uri: >-
+                                      json-validator:classpath:backend-schema-draft-04.json
+                                    description: Validate with backend JSON Schema
+                                - log:
+                                    message: Backend schema validation pass
+                                    description: Log Validation Pass
+                                    loggingLevel: INFO
+                                - setHeader:
+                                    name: Exchange.CONTENT_TYPE
+                                    expression:
+                                      simple:
+                                        expression: MediaType.APPLICATION_JSON
+                                    description: Set Content-Type
+                                - to:
+                                    uri: >-
+                                      https://run.mocky.io/v3/6090142c-bec5-448f-9060-363140f61713
+                                    parameters:
+                                      httpMethod: POST
+                                      bridgeEndpoint: true
+                                      throwExceptionOnFailure: true
+                                      disableStreamCache: true
+                                    description: Call endpoint for backend
+                                - log:
+                                    message: >-
+                                      Backend2 responded with
+                                      ${header.CamelHttpResponseCode}
+                                    loggingLevel: INFO
+                                    description: Log backend response status
+                                - choice:
+                                    when:
+                                      - expression:
+                                          simple:
+                                            expression: ${header.CamelHttpResponseCode} != '200'
+                                        steps:
+                                          - log:
+                                              message: >-
+                                                Backend2 status was
+                                                ${header.CamelHttpResponseCode}
+                                              description: Log Backend Fail
+                                              loggingLevel: ERROR
+                                          - setHeader:
+                                              name: Exchange.HTTP_RESPONSE_CODE
+                                              expression:
+                                                constant:
+                                                  expression: '500'
+                                              description: Set status 500
+                                          - transform:
+                                              expression:
+                                                constant: {}
+                                              description: Set empty response body
+                                        description: Status Not OK
+                                    otherwise:
+                                      steps:
+                                        - setProperty:
+                                            name: BackendResponse
+                                            expression:
+                                              jsonpath:
+                                                expression: $.Response
+                                            description: Read response
+                                        - log:
+                                            message: >-
+                                              Response is
+                                              ${exchangeProperty.BackendResponse}
+                                            description: Log Response
+                                        - transform:
+                                            expression:
+                                              constant: {}
+                                            description: Set empty response body
+                                    description: Check response status
+                              doCatch:
+                                - steps:
+                                    - log:
+                                        message: ${exception.message}
+                                        description: Log Validation Fail
+                                        loggingLevel: ERROR
+                                    - setHeader:
+                                        name: Exchange.HTTP_RESPONSE_CODE
+                                        expression:
+                                          constant:
+                                            expression: '500'
+                                        description: Set status 500
+                                    - transform:
+                                        expression:
+                                          constant: {}
+                                        description: Set empty response body
+                                  exception:
+                                    - >-
+                                      org.apache.camel.component.jsonvalidator.JsonValidationException
+                              description: Do Try Validate output schema
+                      description: Check response status
+                doCatch:
+                  - steps:
+                      - log:
+                          message: ${exception.message}
+                          description: Log Validation Fail
+                          loggingLevel: ERROR
+                      - setHeader:
+                          name: Exchange.HTTP_RESPONSE_CODE
+                          expression:
+                            constant:
+                              expression: '400'
+                          description: Set status 400
+                      - transform:
+                          expression:
+                            constant: {}
+                          description: Set empty response body
+                    exception:
+                      - >-
+                        org.apache.camel.component.jsonvalidator.JsonValidationException
+                description: Do Try Validate Schema
+          description: POST /publish-inventory

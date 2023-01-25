@@ -1,0 +1,13 @@
+let CostCentre = .CostCentre
+
+{
+  "costCentre": $CostCentre,
+  "productSku": $exchange.properties.sku,
+  "timestamp": $exchange.properties.timestamp,
+  "freeStock": $exchange.properties.freeStock,
+  "allocatedStock": $exchange.properties.allocatedStock,
+  "damagedStock": $exchange.properties.damagedStock,
+  "stockUom": $exchange.properties.uom,
+  "brandId": "TravisPerkins"
+}
+

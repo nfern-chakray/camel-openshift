@@ -1,4 +1,4 @@
-package com.chakray.springboot.dummyintegrationapp;
+package com.chakray.springboot.publishinventoryapp;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
