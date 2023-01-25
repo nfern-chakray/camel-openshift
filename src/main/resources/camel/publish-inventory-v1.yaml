@@ -4,11 +4,11 @@ metadata:
   name: publish-inventory
 spec:
   flows:
-    - restConfiguration:
-        component: jetty
-        host: localhost
-        port: '8081'
-        bindingMode: json_xml
+#    - restConfiguration:
+#        component: jetty
+#        host: localhost
+#        port: '8081'
+#        bindingMode: json_xml
     - rest:
         post:
           - path: /publish-inventory
